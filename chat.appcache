@@ -1,0 +1,14 @@
+CACHE MANIFEST 
+# last edited for v2.1.04
+
+CACHE:
+index.html
+RTCMultiConnection.min.js
+FileBufferReader.min.js
+socket.io.js
+jitsi_external_api.js
+ding.mp3
+favicon24.png
+
+NETWORK:
+*
