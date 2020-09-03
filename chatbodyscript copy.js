@@ -27,8 +27,7 @@ window.onload = function() {
 	}else{
 		document.getElementById('session-start').innerHTML = '<span style="color:red">This page runs only from a PassLok chat invitation</span>';
 		throw('illegal chat type')
-	}
-	document.getElementById("user-name").focus()
+	}						
 }
 
 //a few global variables that can be defined now; more once execution begins
@@ -96,16 +95,10 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 	}else if(chatType == 'B'){
 		sessionType = 'audio+data';
 		chatmsgStart = 'Audio, text and file chat';
-		camContainer.style.display = 'none';
-		var resInt = setInterval(addNames,1000)		//add names as titles
+		camContainer.style.display = 'none'
 	}else if(chatType == 'C'){
 		sessionType = 'audio+video+data';
-		chatmsgStart = 'Video, text and file chat';
-		var resInt = setInterval(function(){
-			resizeVideos();
-			addNames();
-			setTimeout(fitVideos,500)	
-		},1000)		//resize videos every second, add names as titles
+		chatmsgStart = 'Video, text and file chat'
 	}
 	document.getElementById('chatmsg').textContent = chatmsgStart + ' Names chosen by the participants will appear here as they join. For a text-only chat, you should authenticate each one.';
 	
@@ -154,20 +147,20 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 		appendDIV('<span style="color:brown">' + e.userid +':  </span>' + e.data);			//someone typed into the chat
 		console.debug(e.userid, 'posted', e.data);
 		console.log('latency:', e.latency, 'ms');
-		ding.play()				//audible reminder
+		document.getElementById('ding').play()				//audible reminder
 	}
 
 //someone has been closed
 	connection.onclose = function(e) {
 		appendDIV('connection closed for ' + e.userid);
-		ding.play();
+		document.getElementById('ding').play();
 		setTimeout(showPeers,200)
 	}
 
 //someone left
 	connection.onleave = function(e) {
 		appendDIV(e.userid + ' left the chat');
-		ding.play();
+		document.getElementById('ding').play();
 		setTimeout(function(){
 			showPeers();
 			for(var id in videos){							//Firefox will leave zombie videos behind if they're not deleted here
@@ -186,7 +179,7 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 		if (document.getElementById('file')) document.getElementById('file').disabled = false;
 		if (document.getElementById('open-new-session')) document.getElementById('open-new-session').disabled = true;
 		appendDIV('connected to ' + e.userid);
-		ding.play();
+		document.getElementById('ding').play();
 		setTimeout(showPeers,200)
 	}
 
@@ -214,7 +207,7 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 
 	connection.onFileEnd = function(file) {
 		progressHelper[file.uuid].div.innerHTML = '<a href="' + file.url + '" target="_blank" download="' + file.name + '">' + file.name + '</a>';
-		ding.play()
+		document.getElementById('ding').play()
 	}
 
 	function updateLabel(progress, label) {
@@ -310,48 +303,4 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 		});
 	document.getElementById('session-start').style.display = 'none';
 	showPeers()
-}
-
-//sound to call attention to new posts and other things
-var ding = document.createElement("audio");
-ding.src = "ding.mp3";
-ding.preload = "auto";
-ding.autobuffer = "true";
-
-//corrects video size depending on how many videos are displayed
-function resizeVideos(){
-	var videos = document.querySelectorAll('video');
-	//first make sure all videos have loaded
-	if(videos.length == 0) return;
-	for(var i = 0; i < videos.length; i++){
-		if(videos[i].videoHeight == 0 || videos[i].videoWidth == 0) return
-	}
-	
-	var	gridSize = Math.ceil(Math.sqrt(videos.length)),						//size of square grid containing the videos
-		maxRatio = videos[0].videoWidth / videos[0].videoHeight;			//aspect ratio of widest video
-	for(var i = 0; i < videos.length; i++) maxRatio = Math.max(maxRatio, videos[i].videoWidth / videos[i].videoHeight);
-
-	var gridHeight = videoContainer.offsetWidth / gridSize / maxRatio;
-	for(var i = 0; i < videos.length; i++) videos[i].height = gridHeight - 5	//shrink or expand so all videos have equal height
-}
-
-//narrows container so all videos are visible
-function fitVideos(){
-	var newWidth = Math.floor((window.innerHeight - 175) * videoContainer.offsetWidth / videoContainer.offsetHeight);		//make it integer
-	if(Math.abs(newWidth - videoContainer.offsetWidth) > 2) videoContainer.style.maxWidth = newWidth + 'px'
-}
-
-//adds nicknames to media elements, restarts them if stopped
-function addNames(){
-	var elements = document.querySelectorAll("audio,video"),
-		previousId  = '';
-	for(var i = 0; i < elements.length; i++){
-		if(elements[i].id == previousId){			//remove duplicate element (it happens in Safari)
-			elements[i].remove()
-		}else{
-			elements[i].title = connection.streamEvents[elements[i].id].userid;
-			previousId = elements[i].id;
-			elements[i].play()					//restart if it was stopped
-		}
-	}
 }

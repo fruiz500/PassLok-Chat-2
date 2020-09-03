@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en" xml:lang="en" xmlns="http://www.w3.org/1999/xhtml" manifest="chat.appcache">
+<head>
+<meta charset="UTF-8">
+<title>PassLok Chat</title>
+    <meta name="author" content="F. Ruiz">
+    <meta name="robots" content="index">
+    <meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1, user-scalable=no">
+    
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="shortcut icon" type="image/x-icon" href="favicon24.png">
+
+<style type="text/css">
+html {
+	-webkit-text-size-adjust: 100%;
+}
+body {
+	font-family: Sans-Serif;
+	font-size:medium;
+	margin-left: 1%;
+	margin-right: 1%;
+	background-color: #FFFFFF;
+	color: #000000;
+	overflow: auto;
+	overflow-wrap: break-word;
+	height: 100%;
+}
+tr, td, th {
+	vertical-align: top;
+	padding: .3em 1.4em;
+	border: none;
+}
+tr {
+	display: block;
+}
+td {
+	float: left;
+}
+table {
+	width: 100%;
+	table-layout: fixed;
+	background: #f7f7ff;
+}
+input[type=checkbox] {
+	/* Larger checkboxes */
+	-ms-transform: scale(1.7); /* IE */
+	-moz-transform: scale(1.7); /* FF */
+	-webkit-transform: scale(1.7); /* Safari and Chrome */
+	-o-transform: scale(1.7); /* Opera */
+	padding: 0px;
+	cursor: pointer;
+	border: 1px solid #dedede;
+}
+#controlContainer {
+	display: none;
+}
+#chatContainer {
+	display: none;
+}
+#welcome {
+	display: inline;
+}
+</style>
+ 
+<!--original sources of the script files-->    
+<!--script src="https://rtcmulticonnection.herokuapp.com/dist/RTCMultiConnection.min.js"></script>
+<script src="https://cdn.webrtc-experiment.com:443/FileBufferReader.js"></script>
+<script src="https://rtcmulticonnection.herokuapp.com/socket.io/socket.io.js"></script>
+<script src='https://meet.jit.si/external_api.js'></script-->
+
+<!--by Muaz Khan, https://github.com/muaz-khan/RTCMultiConnection-->
+<script src="RTCMultiConnection.min.js"></script>
+
+<!--also by Muaz Khan, https://github.com/muaz-khan/FileBufferReader-->
+<script src="FileBufferReader.min.js"></script>
+
+<!--this one is the version of socket.io that Muaz Khan uses-->
+<script src="socket.io.js"></script>
+
+<!--Jitsi external API, from https://jitsi.org/api/-->
+<script src="jitsi_external_api.js"></script>
+
+</head>
+
+<body>
+<div id="muazChat" align="center">
+	<span id="chatmsg"></span>
+	<div id="session-start" align="center">
+   	<img src="PLlogo.png">
+    <h1 id="welcome">Welcome to PassLok Chat</h1>            
+	<p>Write your name, confirm the type of chat, then click the button to join
+	 &nbsp;&nbsp;<input type="text" id="user-name" placeholder="Write your name here">
+     &nbsp;&nbsp;<input type="radio" name="chatmodes" id="dataChat"  title="chat with text messages and file exchange" checked/>
+     Text&nbsp;&nbsp;
+     <input type="radio" name="chatmodes" id="audioChat" title="like Text chat, plus audio"/>
+     Audio&nbsp;&nbsp;
+     <input type="radio" name="chatmodes" id="videoChat" title="like audio chat, plus video"/>
+     Video&nbsp;&nbsp;
+     <input type="radio" name="chatmodes" id="jitsiChat" title="full featured, on jit.si"/>
+     Jitsi&nbsp;&nbsp;
+     <button id="startOrJoinSession" class="setup" style="font-size:18px;">Join</button>
+	</p>
+    <p>The first three types use direct connections between participants. The fourth relies on the hub-based Jitsi service.</p>
+	</div>
+	<div id="videoContainer" align="center"></div>
+    <div id="controlContainer">
+	<button id="shareScreen" class="setup" style="font-size:18px;">Share screen</button>
+    <span id="muteContainer">&nbsp;&nbsp;<input type="checkbox" id="audioMode" title="ckeck to mute"/>&nbsp;Mute</span>
+    <span id="camContainer">&nbsp;&nbsp;<input type="checkbox" id="videoMode" title="ckeck to stop camera and mike"/>&nbsp;Stop Camera+mike</span></div>
+	<table id="chatContainer">
+		<tr>
+			<td style="width: 60%;">
+				<h2 style="display: block; text-align: center;">Text Chat</h2>                      
+				<input type="text" id="chat-input" style="width: 100%;font-size:medium;" placeholder="chat message" disabled>  
+				<div id="chat-output"></div>
+			</td>
+			<td>
+				<h2 style="display: block; text-align: center;">Share Files</h2>
+				<input type="file" class="setup" id="file"  style="font-size:medium;" disabled>
+				<div id="file-progress"></div>
+			</td>
+		</tr>
+	</table>
+</div>
+
+<script src="chatbodyscript.js"> </script>
+
+</body>
+</html>
