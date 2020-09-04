@@ -331,7 +331,18 @@ function resizeVideos(){
 	for(var i = 0; i < videos.length; i++) maxRatio = Math.max(maxRatio, videos[i].videoWidth / videos[i].videoHeight);
 
 	var gridHeight = videoContainer.offsetWidth / gridSize / maxRatio;
-	for(var i = 0; i < videos.length; i++) videos[i].height = gridHeight - 2	//shrink or expand so all videos have equal height
+	for(var i = 0; i < videos.length; i++){
+		if(videos[i].poster){									//this to remove blank video streams
+			if(videos[i].poster.slice(0,5) == 'https'){		//looks at the poster image
+				videos[i].style.display = 'none';
+				var blanked = true
+			}else{
+				videos[i].style.display = '';
+				var blanked = false
+			}
+		}
+		if(!blanked) videos[i].height = gridHeight - 2	//shrink or expand so all videos have equal height
+	}
 }
 
 //narrows container so all videos are visible, leave room for chat if not mobile
