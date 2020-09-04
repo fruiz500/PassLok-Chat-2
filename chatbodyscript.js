@@ -96,16 +96,10 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 	}else if(chatType == 'B'){
 		sessionType = 'audio+data';
 		chatmsgStart = 'Audio, text and file chat';
-		camContainer.style.display = 'none';
-		var resInt = setInterval(addNames,1000)		//add names as titles
+		camContainer.style.display = 'none'
 	}else if(chatType == 'C'){
 		sessionType = 'audio+video+data';
-		chatmsgStart = 'Video, text and file chat';
-		var resInt = setInterval(function(){
-			resizeVideos();
-			addNames();
-			setTimeout(fitVideos,500)	
-		},1000)		//resize videos every second, add names as titles
+		chatmsgStart = 'Video, text and file chat'
 	}
 	document.getElementById('chatmsg').textContent = chatmsgStart + ' Names chosen by the participants will appear here as they join. For a text-only chat, you should authenticate each one.';
 	
@@ -309,7 +303,12 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 			}
 		});
 	document.getElementById('session-start').style.display = 'none';
-	showPeers()
+	showPeers();
+	setInterval(function(){
+		resizeVideos();
+		addNames();
+		setTimeout(fitVideos,500)	
+	},1000)		//resize videos every second, add names as titles
 }
 
 //sound to call attention to new posts and other things
@@ -332,12 +331,13 @@ function resizeVideos(){
 	for(var i = 0; i < videos.length; i++) maxRatio = Math.max(maxRatio, videos[i].videoWidth / videos[i].videoHeight);
 
 	var gridHeight = videoContainer.offsetWidth / gridSize / maxRatio;
-	for(var i = 0; i < videos.length; i++) videos[i].height = gridHeight - 5	//shrink or expand so all videos have equal height
+	for(var i = 0; i < videos.length; i++) videos[i].height = gridHeight - 2	//shrink or expand so all videos have equal height
 }
 
-//narrows container so all videos are visible
+//narrows container so all videos are visible, leave room for chat if not mobile
 function fitVideos(){
-	var newWidth = Math.floor((window.innerHeight - 175) * videoContainer.offsetWidth / videoContainer.offsetHeight);		//make it integer
+	var margin = (typeof window.orientation != 'undefined') ? 25: 175,
+		newWidth = Math.floor((window.innerHeight - margin) * videoContainer.offsetWidth / videoContainer.offsetHeight);		//make it integer
 	if(Math.abs(newWidth - videoContainer.offsetWidth) > 2) videoContainer.style.maxWidth = newWidth + 'px'
 }
 
