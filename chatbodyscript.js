@@ -275,18 +275,18 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 //toggle mute	
 	audioMode.addEventListener('change',function(){
 		if(audioMode.checked){
-			localStream.mute('audio')
-		}else{
 			localStream.unmute('audio')
+		}else{
+			localStream.mute('audio')
 		}
 	})
 
 //toggle camera off	
 	videoMode.addEventListener('change',function(){
 		if(videoMode.checked){
-			localStream.mute('video')
-		}else{
 			localStream.unmute('video')
+		}else{
+			localStream.mute('video')
 		}
 	})
 
