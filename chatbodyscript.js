@@ -330,7 +330,7 @@ function resizeVideos(){
 		visibleCount = videos.length;
 	for(var i = 0; i < videos.length; i++){
 		if(videos[i].poster){									//this to remove blank video streams
-			if(videos[i].poster.slice(0,5) == 'https'){		//looks at the poster image
+			if(videos[i].poster.slice(-4) != 'null'){					//looks at the poster image
 				videos[i].style.display = 'none';
 				visibleCount--;
 				var blanked = true
@@ -338,6 +338,9 @@ function resizeVideos(){
 				videos[i].style.display = '';
 				var blanked = false
 			}
+		}else{
+			videos[i].style.display = '';
+			var blanked = false
 		}
 		if(!blanked) maxRatio = Math.max(maxRatio, videos[i].videoWidth / videos[i].videoHeight)
 	}
@@ -383,6 +386,8 @@ function addNames(){
 					elements[i].style.transform = "";
 					elements[i].style.FlipH = ""
 				}
+			}else{
+				elements[i].muted = false			//unmute the other channels, which might get muted accidentally
 			}
 		}
 	}
