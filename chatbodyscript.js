@@ -71,7 +71,7 @@ function startJitsi(){
 			noSSL: false,
     		width: '100%',
     		height: document.documentElement.clientHeight,
-			userInfo: {displayName: document.getElementById('user-name').value}
+			userInfo: {displayName: document.getElementById('user-name').value.trim()}
 		};
 	var jitsi = new JitsiMeetExternalAPI(domain, options);
 
@@ -121,7 +121,7 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 	connection.mediaConstraints = session;
 	connection.enableFileSharing = true;
 	connection.filesContainer = document.getElementById('file-progress');
-	connection.userid = document.getElementById('user-name').value || Math.floor(Math.random()*1000000);
+	connection.userid = document.getElementById('user-name').value.trim() || Math.floor(Math.random()*1000000);
 	connection.password = chatPwd;
 
 //to handle new streams
@@ -234,7 +234,7 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 		var peerList = '';
 		for (var id in connection.peers){
 			if(connection.peers[id].userid){
-				peerList = peerList + ': ' + connection.peers[id].userid;
+				peerList += ': ' + connection.peers[id].userid;
 			}
 		}
 		if(peerList){
@@ -326,22 +326,26 @@ function resizeVideos(){
 		if(videos[i].videoHeight == 0 || videos[i].videoWidth == 0) return
 	}
 	
-	var	gridSize = Math.ceil(Math.sqrt(videos.length)),						//size of square grid containing the videos
-		maxRatio = videos[0].videoWidth / videos[0].videoHeight;			//aspect ratio of widest video
-	for(var i = 0; i < videos.length; i++) maxRatio = Math.max(maxRatio, videos[i].videoWidth / videos[i].videoHeight);
-
-	var gridHeight = videoContainer.offsetWidth / gridSize / maxRatio;
+	var	maxRatio = videos[0].videoWidth / videos[0].videoHeight,			//aspect ratio of widest video, start value
+		visibleCount = videos.length;
 	for(var i = 0; i < videos.length; i++){
 		if(videos[i].poster){									//this to remove blank video streams
 			if(videos[i].poster.slice(0,5) == 'https'){		//looks at the poster image
 				videos[i].style.display = 'none';
+				visibleCount--;
 				var blanked = true
 			}else{
 				videos[i].style.display = '';
 				var blanked = false
 			}
 		}
-		if(!blanked) videos[i].height = gridHeight - 2	//shrink or expand so all videos have equal height
+		if(!blanked) maxRatio = Math.max(maxRatio, videos[i].videoWidth / videos[i].videoHeight)
+	}
+
+	var	gridSize = Math.ceil(Math.sqrt(visibleCount));						//size of square grid containing the visible videos
+	if(gridSize){
+		var	gridHeight = videoContainer.offsetWidth / gridSize / maxRatio;
+		for(var i = 0; i < videos.length; i++) videos[i].height = gridHeight - 2	//shrink or expand so all videos have equal height
 	}
 }
 
@@ -352,17 +356,34 @@ function fitVideos(){
 	if(Math.abs(newWidth - videoContainer.offsetWidth) > 2) videoContainer.style.maxWidth = newWidth + 'px'
 }
 
-//adds nicknames to media elements, restarts them if stopped
+//adds nicknames to media elements, restarts them if stopped, flips my own video
 function addNames(){
 	var elements = document.querySelectorAll("audio,video"),
+		myName = document.getElementById('user-name').value.trim(),
 		previousId  = '';
 	for(var i = 0; i < elements.length; i++){
 		if(elements[i].id == previousId){			//remove duplicate element (it happens in Safari)
 			elements[i].remove()
 		}else{
-			elements[i].title = connection.streamEvents[elements[i].id].userid;
+			var name = connection.streamEvents[elements[i].id].userid;
+			elements[i].title = name;				//add bubble with name; appears on hover
 			previousId = elements[i].id;
-			elements[i].play()					//restart if it was stopped
+			elements[i].play();					//restart if it was stopped
+			if(name == myName){
+				elements[i].muted = true;			//mute my own channel to avoid feedback
+				elements[i].controls = false;
+				if(mirrorMode.checked){										//flip my own video horizontally
+					elements[i].style.MozTransform = "scale(-1, 1)";
+					elements[i].style.OTransform = "scale(-1, 1)";
+					elements[i].style.transform = "scale(-1, 1)";
+					elements[i].style.FlipH = "display"
+				}else{
+					elements[i].style.MozTransform = "";
+					elements[i].style.OTransform = "";
+					elements[i].style.transform = "";
+					elements[i].style.FlipH = ""
+				}
+			}
 		}
 	}
 }
