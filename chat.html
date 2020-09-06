@@ -29,6 +29,9 @@ body {
 video:focus {
 	outline: none;
 }
+audio {
+	display: none;
+}
 tr, td, th {
 	vertical-align: top;
 	padding: .3em 1.4em;
@@ -109,9 +112,8 @@ input[type=checkbox] {
 	<div id="videoContainer" align="center"></div>
     <div id="controlContainer">
 	<button id="shareScreen" class="setup" style="font-size:18px;">Share screen</button>
-    <span id="muteContainer">&nbsp;&nbsp;<input type="checkbox" id="audioMode" title="unckeck to mute" checked/>&nbsp;Mike</span>
-    <span id="camContainer">&nbsp;&nbsp;<input type="checkbox" id="videoMode" title="unckeck to stop camera" checked/>&nbsp;Camera
-    &nbsp;&nbsp;<input type="checkbox" id="mirrorMode" title="mirrored self view" checked/>&nbsp;Mirror</span></div>
+    <span id="micContainer">&nbsp;&nbsp;<input type="checkbox" id="audioMode" title="unckeck to mute" checked/>&nbsp;Mike</span>
+    <span id="camContainer">&nbsp;&nbsp;<input type="checkbox" id="videoMode" title="unckeck to stop camera" checked/>&nbsp;Camera</div>
 	<table id="chatContainer">
 		<tr>
 			<td style="width: 60%;">

@@ -99,12 +99,7 @@ var wordLength = 9034;
 <script>
 //make a chat invite after the user has chosen the chat type
 function makeChat(){
-//	closeBox();
-	if(dataChat.checked){					//A to C for Muaz Khan's WebRTC chat, D for Jitsi
-		var type = 'A'
-	}else if (audioChat.checked){
-		var type = 'B'
-	}else if (videoChat.checked){
+	if (videoChat.checked){		//A to C for Muaz Khan's WebRTC chat, D for Jitsi
 		var type = 'C'
 	}else{
 		var type = 'D'
@@ -176,8 +171,6 @@ function copyLink(){
 	document.execCommand('copy')
 }
 
-var isMobile = (typeof window.orientation != 'undefined');
-
 //calls texting app
 function sendSMS(){
 	window.open("SMS:","_parent")
@@ -187,7 +180,7 @@ function sendSMS(){
 function sendMail() {
 	if(chatOutput.textContent.trim()){
 		var link = "mailto:"+ "?subject= " + "&body=You have been invited to participate in a direct chat using PassLok. Click the link below to join it. You will have the chance to change the type of chat%0D%0A%0D%0A" + encodeURIComponent(chatOutput.textContent);
-		if(isMobile){ 	 											//new window for PC, same window for mobile
+		if(typeof window.orientation != 'undefined'){ 	 											//new window for PC, same window for mobile
 			window.open(link,"_parent")
 		}else{
 			window.open(link,"_blank")
@@ -205,14 +198,12 @@ function sendMail() {
 </ol>
 <p>A link will appear below, which will be copied to clipboard.</p>
 <p>To use it, click on the link, or paste it into the address box of a WebRTC-capable browser.</p>
-<p>You'll be able to change the type of chat before it starts.<br>
+<p>You'll be able to refine the type of chat before it starts.<br>
   <br>
 </p>
     <div>
-		<input type="radio" name="chatmodes" id="dataChat"  title="chat with text messages and file exchange" checked/>&nbsp; Text&nbsp;&nbsp;
-		<input type="radio" name="chatmodes" id="audioChat" title="like Text chat, plus audio"/>&nbsp; Audio&nbsp;&nbsp;
-		<input type="radio" name="chatmodes" id="videoChat" title="like Audio chat, plus video"/>&nbsp; Video&nbsp;&nbsp;
-  		<input type="radio" name="chatmodes" id="jitsiChat" title="full featured, on jit.si"/>&nbsp; Jitsi
+		<input type="radio" name="chatmodes" id="videoChat" title="no server" checked/>&nbsp; Direct&nbsp;&nbsp;
+  		<input type="radio" name="chatmodes" id="jitsiChat" title="on jit.si"/>&nbsp; Jitsi
         <br><br>
 	  <button class="cssbutton" id="makeChatBtn" title="make chat link" onClick="makeChat();">Make Chat</button>
       <button class="cssbutton" id="smsBtn" title="open texting app" onClick="sendSMS();">SMS</button>

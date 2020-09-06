@@ -92,7 +92,7 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 	if(chatType == 'A'){
 		sessionType = 'data';
 		chatmsgStart = 'Text and file chat';
-		muteContainer.style.display = 'none';
+		micContainer.style.display = 'none';
 		camContainer.style.display = 'none'
 	}else if(chatType == 'B'){
 		sessionType = 'audio+data';
@@ -230,16 +230,28 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 		div.tabIndex = 0;
 	}
 	
-//displays a list of participants
-	function showPeers(){
-		var peerList = '';
-		for (var id in connection.peers){
-			if(connection.peers[id].userid){
-				peerList += ': ' + connection.peers[id].userid;
+//displays a list of the other participants, classified by type of media
+	function showPeers(){	
+		var peers = connection.getAllParticipants(),		//array of userid
+			peerList = ['','',''];
+		for(var i = 0; i < peers.length; i++){
+			var streams = connection.peers[peers[i]].streams,
+				name = connection.peers[peers[i]].userid;
+			if(streams.length == 0){
+				peerList[2] += ': ' + name
+			}else{
+				if(streams[0].isVideo){
+					peerList[0] += ': ' + name
+				}else{
+					peerList[1] += ': ' + name
+				}
 			}
 		}
-		if(peerList){
-			document.getElementById('chatmsg').innerHTML = chatmsgStart + '<span style="color:brown">' + peerList + '</span>'
+		if(peerList[0] || peerList[1] || peerList[2]){
+			if(!peerList[0]) peerList[0] = ': none';
+			if(!peerList[1]) peerList[1] = ': none';
+			if(!peerList[2]) peerList[2] = ': none';
+			document.getElementById('chatmsg').innerHTML = chatmsgStart + ".  Video" + '<span style="color:green">' + peerList[0] + '</span>' + ".  Audio" + '<span style="color:brown">' + peerList[1] + '</span>' + ".  Text" + '<span style="color:purple">' + peerList[2] + '</span>'
 		}else{
 			document.getElementById('chatmsg').textContent = "Participants will be listed here as they join."
 		}
@@ -321,10 +333,11 @@ ding.autobuffer = "true";
 //corrects video size depending on how many videos are displayed
 function resizeVideos(){
 	var videos = document.querySelectorAll('video');
-	//first make sure all videos have loaded
+
+	//make sure all videos have loaded
 	if(videos.length == 0) return;
-	
-	var	maxRatio = videos[0].videoHeight == 0 ? 0 : videos[0].videoWidth / videos[0].videoHeight,			//aspect ratio of widest video, start value
+
+	var maxRatio = 0;
 		visibleCount = videos.length;
 	for(var i = 0; i < videos.length; i++){
 		if(videos[i].poster){									//this to remove blank video streams
@@ -366,7 +379,7 @@ function fitVideos(){
 	if(Math.abs(newWidth - videoContainer.offsetWidth) > 2) videoContainer.style.maxWidth = newWidth + 'px'
 }
 
-//adds nicknames to media elements, restarts them if stopped, flips my own video
+//adds nicknames to media elements, restarts them if stopped, remove duplicates, flips own video
 function addNames(){
 	var elements = document.querySelectorAll("audio,video"),
 		myName = document.getElementById('user-name').value.trim(),
@@ -379,20 +392,13 @@ function addNames(){
 			elements[i].title = name;				//add bubble with name; appears on hover
 			previousId = elements[i].id;
 			elements[i].play();					//restart if it was stopped
-			if(name == myName){
+			if(name == myName && i == elements.length - 1){
 				elements[i].muted = true;			//mute my own channel to avoid feedback
-				elements[i].controls = false;
-				if(mirrorMode.checked){										//flip my own video horizontally
-					elements[i].style.MozTransform = "scale(-1, 1)";
-					elements[i].style.OTransform = "scale(-1, 1)";
-					elements[i].style.transform = "scale(-1, 1)";
-					elements[i].style.FlipH = "display"
-				}else{
-					elements[i].style.MozTransform = "";
-					elements[i].style.OTransform = "";
-					elements[i].style.transform = "";
-					elements[i].style.FlipH = ""
-				}
+				elements[i].controls = false;							
+				elements[i].style.MozTransform = "scale(-1, 1)";		//flip my own video horizontally
+				elements[i].style.OTransform = "scale(-1, 1)";
+				elements[i].style.transform = "scale(-1, 1)";
+				elements[i].style.FlipH = "display"
 			}else{
 				elements[i].muted = false			//unmute the other channels, which might get muted accidentally
 			}
@@ -403,14 +409,17 @@ function addNames(){
 //detect if a video is all black (needed in Firefox)
 function isBlack(video){
 	var canvas = document.createElement('canvas');
-	canvas.width = 320;
-	canvas.height = 240;
+	canvas.width = 40;
+	canvas.height = 30;
 	var ctx = canvas.getContext('2d');
-	ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-	var pixels = ctx.getImageData(0, 0, canvas.width, canvas.height),
-		sum = 0;
+	try {
+		ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+		var pixels = ctx.getImageData(0, 0, canvas.width, canvas.height)
+	} catch(err) {
+        return true
+    }
 	for(var i = 0; i < pixels.data.length; i+=4){				//add all the values; black screen will give zero
-		sum += pixels.data[i] + pixels.data[i+1] + pixels.data[i+2]
+		if(pixels.data[i] != 0 || pixels.data[i+1] != 0 || pixels.data[i+2] != 0) return false
 	}	
-	return !sum
+	return true
 }
