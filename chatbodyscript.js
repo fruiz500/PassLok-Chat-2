@@ -39,7 +39,8 @@ var chatToken = decodeURI(location.hash),
 	chatPwd = parts[1],					//256 bit, base64
 	sessionType = '',
 	connection,
-	videos = {};
+	videos = {},
+	isFirefox = (typeof InstallTrigger !== 'undefined');
 
 //change chat type based on radio buttons
 dataChat.addEventListener('change',function(){if(dataChat.checked) chatType = 'A'});
@@ -322,15 +323,21 @@ function resizeVideos(){
 	var videos = document.querySelectorAll('video');
 	//first make sure all videos have loaded
 	if(videos.length == 0) return;
-	for(var i = 0; i < videos.length; i++){
-		if(videos[i].videoHeight == 0 || videos[i].videoWidth == 0) return
-	}
 	
-	var	maxRatio = videos[0].videoWidth / videos[0].videoHeight,			//aspect ratio of widest video, start value
+	var	maxRatio = videos[0].videoHeight == 0 ? 0 : videos[0].videoWidth / videos[0].videoHeight,			//aspect ratio of widest video, start value
 		visibleCount = videos.length;
 	for(var i = 0; i < videos.length; i++){
 		if(videos[i].poster){									//this to remove blank video streams
 			if(videos[i].poster.slice(-4) != 'null'){					//looks at the poster image
+				videos[i].style.display = 'none';
+				visibleCount--;
+				var blanked = true
+			}else{
+				videos[i].style.display = '';
+				var blanked = false
+			}
+		}else if(isFirefox){									//for Firefox, actually looks at the content, and see if it's all black
+			if(isBlack(videos[i])){
 				videos[i].style.display = 'none';
 				visibleCount--;
 				var blanked = true
@@ -346,7 +353,7 @@ function resizeVideos(){
 	}
 
 	var	gridSize = Math.ceil(Math.sqrt(visibleCount));						//size of square grid containing the visible videos
-	if(gridSize){
+	if(gridSize && maxRatio){
 		var	gridHeight = videoContainer.offsetWidth / gridSize / maxRatio;
 		for(var i = 0; i < videos.length; i++) videos[i].height = gridHeight - 2	//shrink or expand so all videos have equal height
 	}
@@ -365,7 +372,7 @@ function addNames(){
 		myName = document.getElementById('user-name').value.trim(),
 		previousId  = '';
 	for(var i = 0; i < elements.length; i++){
-		if(elements[i].id == previousId){			//remove duplicate element (it happens in Safari)
+		if(elements[i].id == previousId || elements[i].src == 'null'){			//remove duplicate or ghost element (it happens in Safari)
 			elements[i].remove()
 		}else{
 			var name = connection.streamEvents[elements[i].id].userid;
@@ -391,4 +398,19 @@ function addNames(){
 			}
 		}
 	}
+}
+
+//detect if a video is all black (needed in Firefox)
+function isBlack(video){
+	var canvas = document.createElement('canvas');
+	canvas.width = 320;
+	canvas.height = 240;
+	var ctx = canvas.getContext('2d');
+	ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+	var pixels = ctx.getImageData(0, 0, canvas.width, canvas.height),
+		sum = 0;
+	for(var i = 0; i < pixels.data.length; i+=4){				//add all the values; black screen will give zero
+		sum += pixels.data[i] + pixels.data[i+1] + pixels.data[i+2]
+	}	
+	return !sum
 }
