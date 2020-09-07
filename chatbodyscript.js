@@ -74,7 +74,7 @@ function startJitsi(){
     		height: document.documentElement.clientHeight,
 			userInfo: {displayName: document.getElementById('user-name').value.trim()}
 		};
-	var jitsi = new JitsiMeetExternalAPI(domain, options);
+	var jitsi = new JitsiMeetExternalAPI(domain, options);					//this call handles everything
 
 	jitsi.addListener('videoConferenceJoined', function(){					//load password for initiator
 		jitsi.executeCommand('password', chatPwd);
@@ -212,6 +212,71 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 		ding.play()
 	}
 
+//file sending
+	document.getElementById('file').onchange = function() {
+		connection.send(this.files[0]);
+	}
+
+	var chatOutput = document.getElementById('chat-output'),
+		fileProgress = document.getElementById('file-progress');
+
+//text sending
+	var chatInput = document.getElementById('chat-input');
+	chatInput.onkeypress = function(e) {
+		if (e.keyCode !== 13 || !this.value) return;
+		appendDIV('<span style="color:green">--Me: </span>' + this.value);
+		connection.send(this.value);
+		this.value = '';
+	}
+
+//this starts the session	
+	connection.openOrJoin(chatRoom, function(isJoinedRoom, roomid, error) {
+			if (error) {
+				if (error === 'Invalid password') {
+					chatmsg.textContent = "The chat password is incorrect"
+					return
+				}else if (error === 'Room not available') {
+					chatmsg.textContent = "Invalid room name"
+					return
+				}
+			}
+		});
+
+//screen sharing	
+	document.getElementById('shareScreen').onclick = function() {
+		connection.mediaConstraints.video = true;
+		connection.addStream({
+			screen: true,
+			oneway: true
+		});
+	}
+	
+	var localStream = connection.attachStreams[0];		//get the stream being sent, to turn it on and off
+
+//toggle mute	
+	audioMode.addEventListener('change',function(){
+		if(audioMode.checked){
+			localStream.unmute('audio')
+		}else{
+			localStream.mute('audio')
+		}
+	})
+
+//toggle camera off	
+	videoMode.addEventListener('change',function(){
+		if(videoMode.checked){
+			localStream.unmute('video')
+		}else{
+			localStream.mute('video')
+		}
+	})
+		
+//sound to call attention to new posts and other things
+	var ding = document.createElement("audio");
+	ding.src = "ding.mp3";
+	ding.preload = "auto";
+	ding.autobuffer = "true";
+
 	function updateLabel(progress, label) {
 		if (progress.position == -1) return;
 			var position = +progress.position.toFixed(2).split('.')[1] || 100;
@@ -256,65 +321,101 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 			document.getElementById('chatmsg').textContent = "Participants will be listed here as they join."
 		}
 	}
-
-//file sending
-	document.getElementById('file').onchange = function() {
-		connection.send(this.files[0]);
-	}
-
-	var chatOutput = document.getElementById('chat-output'),
-		fileProgress = document.getElementById('file-progress');
-
-//text sending
-	var chatInput = document.getElementById('chat-input');
-	chatInput.onkeypress = function(e) {
-		if (e.keyCode !== 13 || !this.value) return;
-		appendDIV('<span style="color:green">--Me: </span>' + this.value);
-		connection.send(this.value);
-		this.value = '';
-	}
-
-//screen sharing	
-	document.getElementById('shareScreen').onclick = function() {
-		connection.mediaConstraints.video = true;
-		connection.addStream({
-			screen: true,
-			oneway: true
-		});
-	}
 	
-	var localStream = connection.attachStreams[0];		//get the stream being sent, to turn it on and off
+//corrects video size depending on how many videos are displayed
+	function resizeVideos(){
+		var videos = document.querySelectorAll('video');
 
-//toggle mute	
-	audioMode.addEventListener('change',function(){
-		if(audioMode.checked){
-			localStream.unmute('audio')
-		}else{
-			localStream.mute('audio')
+		//make sure all videos have loaded
+		if(videos.length == 0) return;
+
+		var maxRatio = 0;
+			visibleCount = videos.length;
+		for(var i = 0; i < videos.length; i++){
+			if(videos[i].poster){									//this to remove blank video streams
+				if(videos[i].poster.slice(-4) != 'null'){					//looks at the poster image
+					videos[i].style.display = 'none';
+					visibleCount--;
+					var blanked = true
+				}else{
+					videos[i].style.display = '';
+					var blanked = false
+				}
+			}else if(isFirefox){									//for Firefox, actually looks at the content, and see if it's all black
+				if(isBlack(videos[i])){
+					videos[i].style.display = 'none';
+					visibleCount--;
+					var blanked = true
+				}else{
+					videos[i].style.display = '';
+					var blanked = false
+				}
+			}else{
+				videos[i].style.display = '';
+				var blanked = false
+			}
+			if(!blanked) maxRatio = Math.max(maxRatio, videos[i].videoWidth / videos[i].videoHeight)
 		}
-	})
 
-//toggle camera off	
-	videoMode.addEventListener('change',function(){
-		if(videoMode.checked){
-			localStream.unmute('video')
-		}else{
-			localStream.mute('video')
+		var	gridSize = Math.ceil(Math.sqrt(visibleCount));						//size of square grid containing the visible videos
+		if(gridSize && maxRatio){
+			var	gridHeight = videoContainer.offsetWidth / gridSize / maxRatio;
+			for(var i = 0; i < videos.length; i++) videos[i].height = gridHeight - 2	//shrink or expand so all videos have equal height
 		}
-	})
+	}
 
-//this starts the session	
-	connection.openOrJoin(chatRoom, function(isJoinedRoom, roomid, error) {
-			if (error) {
-				if (error === 'Invalid password') {
-					chatmsg.textContent = "The chat password is incorrect"
-					return
-				}else if (error === 'Room not available') {
-					chatmsg.textContent = "Invalid room name"
-					return
+//narrows container so all videos are visible, leave room for chat if not mobile
+	function fitVideos(){
+		var margin = (typeof window.orientation != 'undefined') ? 25: 175,
+			newWidth = Math.floor((window.innerHeight - margin) * videoContainer.offsetWidth / videoContainer.offsetHeight);		//make it integer
+		if(Math.abs(newWidth - videoContainer.offsetWidth) > 2) videoContainer.style.maxWidth = newWidth + 'px'
+	}
+
+//adds nicknames to media elements, restarts them if stopped, remove duplicates, flips own video
+	function addNames(){
+		var elements = document.querySelectorAll("audio,video"),
+			myName = document.getElementById('user-name').value.trim(),
+			previousId  = '';
+		for(var i = 0; i < elements.length; i++){
+			if(elements[i].id == previousId || elements[i].src == 'null'){			//remove duplicate or ghost element (it happens in Safari)
+				elements[i].remove()
+			}else{
+				var name = connection.streamEvents[elements[i].id].userid;
+				elements[i].title = name;				//add bubble with name; appears on hover
+				previousId = elements[i].id;
+				elements[i].play();					//restart if it was stopped
+				if(name == myName && i == elements.length - 1){
+					elements[i].muted = true;			//mute my own channel to avoid feedback
+					elements[i].controls = false;							
+					elements[i].style.MozTransform = "scale(-1, 1)";		//flip my own video horizontally
+					elements[i].style.OTransform = "scale(-1, 1)";
+					elements[i].style.transform = "scale(-1, 1)";
+					elements[i].style.FlipH = "display"
+				}else{
+					elements[i].muted = false			//unmute the other channels, which might get muted accidentally
 				}
 			}
-		});
+		}
+	}
+
+//detect if a video is all black (needed in Firefox)
+	function isBlack(video){
+		var canvas = document.createElement('canvas');
+		canvas.width = 40;
+		canvas.height = 30;
+		var ctx = canvas.getContext('2d');
+		try {
+			ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+			var pixels = ctx.getImageData(0, 0, canvas.width, canvas.height)
+		} catch(err) {
+    	    return true
+  	  }
+		for(var i = 0; i < pixels.data.length; i+=4){				//add all the values; black screen will give zero
+			if(pixels.data[i] != 0 || pixels.data[i+1] != 0 || pixels.data[i+2] != 0) return false
+		}	
+		return true
+	}
+		
 	document.getElementById('session-start').style.display = 'none';
 	showPeers();
 	setInterval(function(){
@@ -322,104 +423,4 @@ function startMuaz(){							// Documentation - www.RTCMultiConnection.org
 		addNames();
 		setTimeout(fitVideos,500)	
 	},1000)		//resize videos every second, add names as titles
-}
-
-//sound to call attention to new posts and other things
-var ding = document.createElement("audio");
-ding.src = "ding.mp3";
-ding.preload = "auto";
-ding.autobuffer = "true";
-
-//corrects video size depending on how many videos are displayed
-function resizeVideos(){
-	var videos = document.querySelectorAll('video');
-
-	//make sure all videos have loaded
-	if(videos.length == 0) return;
-
-	var maxRatio = 0;
-		visibleCount = videos.length;
-	for(var i = 0; i < videos.length; i++){
-		if(videos[i].poster){									//this to remove blank video streams
-			if(videos[i].poster.slice(-4) != 'null'){					//looks at the poster image
-				videos[i].style.display = 'none';
-				visibleCount--;
-				var blanked = true
-			}else{
-				videos[i].style.display = '';
-				var blanked = false
-			}
-		}else if(isFirefox){									//for Firefox, actually looks at the content, and see if it's all black
-			if(isBlack(videos[i])){
-				videos[i].style.display = 'none';
-				visibleCount--;
-				var blanked = true
-			}else{
-				videos[i].style.display = '';
-				var blanked = false
-			}
-		}else{
-			videos[i].style.display = '';
-			var blanked = false
-		}
-		if(!blanked) maxRatio = Math.max(maxRatio, videos[i].videoWidth / videos[i].videoHeight)
-	}
-
-	var	gridSize = Math.ceil(Math.sqrt(visibleCount));						//size of square grid containing the visible videos
-	if(gridSize && maxRatio){
-		var	gridHeight = videoContainer.offsetWidth / gridSize / maxRatio;
-		for(var i = 0; i < videos.length; i++) videos[i].height = gridHeight - 2	//shrink or expand so all videos have equal height
-	}
-}
-
-//narrows container so all videos are visible, leave room for chat if not mobile
-function fitVideos(){
-	var margin = (typeof window.orientation != 'undefined') ? 25: 175,
-		newWidth = Math.floor((window.innerHeight - margin) * videoContainer.offsetWidth / videoContainer.offsetHeight);		//make it integer
-	if(Math.abs(newWidth - videoContainer.offsetWidth) > 2) videoContainer.style.maxWidth = newWidth + 'px'
-}
-
-//adds nicknames to media elements, restarts them if stopped, remove duplicates, flips own video
-function addNames(){
-	var elements = document.querySelectorAll("audio,video"),
-		myName = document.getElementById('user-name').value.trim(),
-		previousId  = '';
-	for(var i = 0; i < elements.length; i++){
-		if(elements[i].id == previousId || elements[i].src == 'null'){			//remove duplicate or ghost element (it happens in Safari)
-			elements[i].remove()
-		}else{
-			var name = connection.streamEvents[elements[i].id].userid;
-			elements[i].title = name;				//add bubble with name; appears on hover
-			previousId = elements[i].id;
-			elements[i].play();					//restart if it was stopped
-			if(name == myName && i == elements.length - 1){
-				elements[i].muted = true;			//mute my own channel to avoid feedback
-				elements[i].controls = false;							
-				elements[i].style.MozTransform = "scale(-1, 1)";		//flip my own video horizontally
-				elements[i].style.OTransform = "scale(-1, 1)";
-				elements[i].style.transform = "scale(-1, 1)";
-				elements[i].style.FlipH = "display"
-			}else{
-				elements[i].muted = false			//unmute the other channels, which might get muted accidentally
-			}
-		}
-	}
-}
-
-//detect if a video is all black (needed in Firefox)
-function isBlack(video){
-	var canvas = document.createElement('canvas');
-	canvas.width = 40;
-	canvas.height = 30;
-	var ctx = canvas.getContext('2d');
-	try {
-		ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-		var pixels = ctx.getImageData(0, 0, canvas.width, canvas.height)
-	} catch(err) {
-        return true
-    }
-	for(var i = 0; i < pixels.data.length; i+=4){				//add all the values; black screen will give zero
-		if(pixels.data[i] != 0 || pixels.data[i+1] != 0 || pixels.data[i+2] != 0) return false
-	}	
-	return true
 }
